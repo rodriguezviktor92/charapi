@@ -5,16 +5,26 @@ var request = require('request');
 var AWS = require('aws-sdk');
 var zlib = require('zlib');
 var lockFile = require('lockfile');
+const cors = require('cors');
 
+if (process.env.NODE_ENV === 'development') {
+    require('dotenv').config();
+}
+const port = process.env.PORT || 3000;
+
+const corsOptions = {
+    origin: '*',
+    methods: 'GET,POST,PUT,DELETE',
+};
 
 // TODO set up your Character API key here
-var charAPIKey = "xxxxxxxxxxxxxxxxxxxxxxxxx";
+var charAPIKey = process.env.CHARACTER_API;
 
 var polly = new AWS.Polly({
   region: 'us-east-1',
   maxRetries: 3,
-  accessKeyId: 'xxxxxxxxxxxxxxxxxxxx',
-  secretAccessKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+  accessKeyId: process.env.ACCESS_KEY,
+  secretAccessKey: process.env.SECRET_KEY,
   timeout: 15000
 });
 
@@ -25,6 +35,7 @@ var cachePrefix = "./cache/";
 var app = express();
 app.use(bodyParser.json({limit: '1mb'}));
 app.use(bodyParser.urlencoded({ limit: '1mb', extended: true }));
+app.use(cors(corsOptions));
 
 // The Character API endpoints
 
@@ -60,7 +71,8 @@ app.get('/animate', function(req, res, next) {
         var format = req.query.format || (charobj.style.split("-")[0] == "realistic" ? "jpeg" : "png");
         
         // Determine an appropriate voice for your character - or you can fix it here instead
-        var voice = charobj.defaultVoice;
+        // var voice = charobj.defaultVoice;
+        var voice = 'NeuralLucia';
 
         // Allow client to override voice. TODO - delete this line if your voice is always the same.
         if (req.query.voice) voice = req.query.voice;
@@ -78,7 +90,8 @@ app.get('/animate', function(req, res, next) {
             "chary":"0",
             "fps":"24",
             "quality":"95",
-            "backcolor":"ffffff",
+            // "backcolor":"ffffff",
+            "density":"3",
             "do":req.query.do,
             "say":req.query.say,
         };
@@ -430,6 +443,8 @@ function characterObject(id) {
 }
 
 
-app.listen(3000, function() {
-  console.log('Listening on port 3000');
+app.listen(port, function() {
+  console.log(`Listening on port ${port}`);
 });
+
+module.exports = app;
